@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
         }
         catch(Exception ex)
         {
-            return BadRequest(ex);
+            return BadRequest(new { message = ex.Message });
         }
         
     }
