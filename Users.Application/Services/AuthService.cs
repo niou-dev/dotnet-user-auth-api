@@ -22,11 +22,18 @@ public class AuthService : IAuthService
 
     public async Task<SignupResponse> SignUp(SignUpRequest signUpRequest)
     {
-        var result = await _usersRepository.GetUserByUsernameAsync(signUpRequest.Username);
-        if (!(result == null))
+        var checkUsername = await _usersRepository.GetUserByUsernameAsync(signUpRequest.Username);
+        if (checkUsername != null)
         {
             
-            throw new InvalidOperationException("Username already exists");
+            throw new InvalidOperationException("User with this username already exists");
+        }
+        
+        var checkEmail = await _usersRepository.GetUserByUsernameAsync(signUpRequest.Email);
+        if (checkEmail != null)
+        {
+            
+            throw new InvalidOperationException("User with this email already exists");
         }
         
         User user = new User()
