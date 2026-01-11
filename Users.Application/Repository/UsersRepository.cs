@@ -128,4 +128,20 @@ public class UsersRepository : IUsersRepository
 
         return result;
     }
+
+    public async Task<bool> UpdatePasswordAsync(Guid id, string passwordHash, CancellationToken token = default)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
+        
+        var result = await connection.ExecuteAsync(
+            new CommandDefinition(
+            
+                """
+                UPDATE users
+                SET password = @passwordHash
+                WHERE id = @id
+                """, new { id, passwordHash }, cancellationToken: token));
+        
+        return result > 0;
+    }
 }

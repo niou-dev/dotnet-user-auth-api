@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices.JavaScript;
+using System.Security.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Users.Application.Mapping;
 using Users.Application.Models;
@@ -19,7 +19,7 @@ public class UsersService : IUsersService
     }
 
 
-    public async Task<bool> CreateUser(CreateUserRequest request)
+    public async Task<bool> CreateUserAsync(CreateUserRequest request)
     {
         User user = request.MapToUser();
         user.Password = _passwordHasher.HashPassword(user, request.Password);
@@ -27,12 +27,12 @@ public class UsersService : IUsersService
         return await _usersRepository.CreateUserAsync(user);
     }
 
-    public async Task<bool> DeleteUser(Guid id)
+    public async Task<bool> DeleteUserAsync(Guid id)
     {
         return  await _usersRepository.DeleteUserAsync(id);
     }
 
-    public async Task<UserResponse?> UpdateUser(Guid id, UpdateUserRequest request)
+    public async Task<UserResponse?> UpdateUserAsync(Guid id, UpdateUserRequest request)
     {
         var userExists = await _usersRepository.ExistUserByIdAsync(id);
         if (userExists) return null;
@@ -50,7 +50,7 @@ public class UsersService : IUsersService
         return user.MapToUserResponse();
     }
 
-    public async Task<UserResponse?> GetUserById(Guid id)
+    public async Task<UserResponse?> GetUserByIdAsync(Guid id)
     {
         var result = await _usersRepository.GetUserByIdAsync(id);
 
@@ -59,7 +59,7 @@ public class UsersService : IUsersService
         return result.MapToUserResponse();
     }
 
-    public async Task<UserResponse?> GetUserByUsername(string username)
+    public async Task<UserResponse?> GetUserByUsernameAsync(string username)
     {
         var result = await _usersRepository.GetUserByUsernameAsync(username);
 
@@ -69,19 +69,21 @@ public class UsersService : IUsersService
         
     }
 
-    public async Task<UserResponse?> GetUserByEmail(string email)
+    public async Task<UserResponse?> GetUserByEmailAsync(string email)
     {
-        throw new NotImplementedException();
+        var user = await _usersRepository.GetUserByEmailAsync(email);
+        if (user == null) return null;
+        return user.MapToUserResponse();
     }
 
-    public async Task<IEnumerable<UserResponse>> GetUsers()
+    public async Task<IEnumerable<UserResponse>> GetUsersAsync()
     {
         var result = await _usersRepository.GetUsersAsync();
 
         return result.Select(x => x.MapToUserResponse());
     }
 
-    public Task<bool> CreateAdmin(CreateUserRequest request)
+    public Task<bool> CreateAdminAsync(CreateUserRequest request)
     {
         User user = new User()
         {
@@ -96,5 +98,23 @@ public class UsersService : IUsersService
         
         user.Password = _passwordHasher.HashPassword(user, request.Password);
         return _usersRepository.CreateUserAsync(user);
+    }
+
+    public async Task<bool> ChangePasswordAsync(Guid id, ChangePasswordRequest request, CancellationToken token)
+    {
+        var user = await _usersRepository.GetUserByIdAsync(id, token);
+        if (user is null)
+        {
+            throw new KeyNotFoundException("User not found");
+        }
+
+        var passwordVerify = _passwordHasher.VerifyHashedPassword(user, user.Password, request.OldPassword);
+        if (passwordVerify == PasswordVerificationResult.Failed)
+        {
+            throw new InvalidCredentialException();
+        }
+        var newHashed = _passwordHasher.HashPassword(user, request.NewPassword);
+        await _usersRepository.UpdatePasswordAsync(id, newHashed, token);
+        return true;
     }
 }

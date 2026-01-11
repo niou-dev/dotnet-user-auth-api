@@ -19,4 +19,5 @@ public interface IUsersRepository
     Task<IEnumerable<User>> GetUsersAsync(CancellationToken token = default);
 
     Task<bool> ExistUserByIdAsync(Guid id, CancellationToken token = default);
+    Task<bool> UpdatePasswordAsync(Guid id, string passwordHash, CancellationToken token = default);
 }

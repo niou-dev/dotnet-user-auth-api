@@ -20,27 +20,48 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
-        var userId = Guid.Parse(User.FindFirst("userid").Value);
-        var result = await _usersService.GetUserById(userId);
+        var userId = Guid.Parse(User.FindFirst("userid")!.Value);
+        var result = await _usersService.GetUserByIdAsync(userId);
         if (result == null) return NotFound();
         return Ok(result);
+    }
+
+    [HttpPost("me/change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken token)
+    {
+        var userId = Guid.Parse(User.FindFirst("userid")!.Value);
+        try
+        {
+            await _usersService.ChangePasswordAsync(userId, request, token);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest( new { message = ex.Message });
+        }
+
+        return NoContent();
     }
     
     [Authorize("Admin")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
     {
-        var result = await _usersService.GetUsers();
-        if (result == null) return StatusCode(StatusCodes.Status500InternalServerError);
-        
-        return Ok(result);
+        try
+        {
+            var result = await _usersService.GetUsersAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
+        }
     }
     
     [Authorize("Admin")]
     [HttpGet("{username}")]
     public async Task<ActionResult<UserResponse>> GetUser(string username)
     {
-        var user = await _usersService.GetUserByUsername(username);
+        var user = await _usersService.GetUserByUsernameAsync(username);
         
         if (user == null) return NotFound();
         
@@ -51,7 +72,7 @@ public class UsersController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser(CreateUserRequest request)
     {
-        var result = await _usersService.CreateUser(request);
+        var result = await _usersService.CreateUserAsync(request);
         if (result)
         {
             return Ok();
@@ -65,7 +86,7 @@ public class UsersController : ControllerBase
     [HttpPost("delete")]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
-        var result = await _usersService.DeleteUser(userId);
+        var result = await _usersService.DeleteUserAsync(userId);
         if (result) return Ok();
         
         return NotFound();
@@ -75,7 +96,7 @@ public class UsersController : ControllerBase
     [HttpPost("create-admin")]
     public async Task<IActionResult> CreateAdmin(CreateUserRequest request)
     {
-        var result = await _usersService.CreateAdmin(request: request);
+        var result = await _usersService.CreateAdminAsync(request: request);
         if  (result) return Ok();
         return BadRequest();
     }
