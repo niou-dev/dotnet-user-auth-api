@@ -29,7 +29,7 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("User with this username already exists");
         }
         
-        var checkEmail = await _usersRepository.GetUserByUsernameAsync(signUpRequest.Email);
+        var checkEmail = await _usersRepository.GetUserByEmailAsync(signUpRequest.Email);
         if (checkEmail != null)
         {
             
