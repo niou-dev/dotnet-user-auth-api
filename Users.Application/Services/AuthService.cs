@@ -51,7 +51,10 @@ public class AuthService : IAuthService
         var succededCreation = await _usersRepository.CreateUserAsync(user);
         if (!succededCreation) throw new InvalidOperationException("Could not create user");
         
-        var jwt = _jwtService.GenerateToken(user);
+        var customClaims = new Dictionary<string, object>();
+        customClaims["admin"] = user.IsAdmin;
+        
+        var jwt = _jwtService.GenerateToken(user, customClaims);
         SignupResponse response = new SignupResponse();
         response.UserResponse = new UserResponse()
         {
