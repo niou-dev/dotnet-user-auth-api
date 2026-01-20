@@ -83,7 +83,7 @@ public class UsersController : ControllerBase
     }
 
     [Authorize("Admin")]
-    [HttpPost("delete")]
+    [HttpDelete("delete")]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
         var result = await _usersService.DeleteUserAsync(userId);
